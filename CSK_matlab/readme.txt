@@ -2,7 +2,7 @@
 This MATLAB code implements a GUI for the tracking algorithm described in:
 
 
-Jo�o F. Henriques, Rui Caseiro, Pedro Martins, and Jorge Batista,
+João F. Henriques, Rui Caseiro, Pedro Martins, and Jorge Batista,
 "Exploiting the Circulant Structure of Tracking-by-detection with Kernels,"
 ECCV, 2012.
 
@@ -24,6 +24,8 @@ contain a text file in MILTrack's ground truth format, with bounding box
 coordinates for at least the first frame, to initialize the tracker.
 
 
-Jo�o F. Henriques, 2012
+João F. Henriques, 2012
 http://www.isr.uc.pt/~henriques/
 
+
+这是原作者的代码，我加了详细的中文注释，有助于理解整个过程。还绘制了主要程序的流程图
