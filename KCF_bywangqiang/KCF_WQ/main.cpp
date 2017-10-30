@@ -108,7 +108,7 @@ int main(/*int argc, char **argv*/)
   cout << "test1" << endl;
   
   //读视频的话用这个可以。
-  VideoCapture video("dat1.avi");
+  VideoCapture video("C:\\Users\\zhxing\\Desktop\\论文代码\\KCF_WQ\\KCF_WQ\\dat1.avi");
   Mat frame;
   unsigned video_num= video.get(CV_CAP_PROP_FRAME_COUNT);
   cout << "总帧数: "<<video_num << endl;
@@ -139,7 +139,7 @@ int main(/*int argc, char **argv*/)
 		  //按理说封装成一个类比较好，但是没有封装成功，主要原因是鼠标回掉函数不能作为类成员函数，声名
 		  //成友元也不能访问成员（按理说是可以访问的），着急这测试效果，（在这个项目中不封装也不是很影响）
 		  //所以就先写成头文件了。
-		  
+		  cout << "跟踪尺寸:  " << groundtruth_rect[0] << endl;
         kcf_tracker.Init(image, groundtruth_rect[0]);
         result_rect.push_back(groundtruth_rect[0]);     //0-index
       }

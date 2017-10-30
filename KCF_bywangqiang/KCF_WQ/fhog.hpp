@@ -44,7 +44,7 @@ public:
 		//这个算出每个点幅值的大小（M）和方向(O)
 
         int n_chns = (use_hog == 0) ? n_orients : (use_hog==1 ? n_orients*4 : n_orients*3+5);
-		//通道数,看是否用0是9维，1是hog36维，2是fhog一共32维（最后一维是全零）
+		//通道数,看是否用0是9维（直接用梯度统计，不算block？），1是hog36维，2是fhog一共32维（最后一维是全零）
         int hb = h/bin_size, wb = w/bin_size;   //bin_size是每个cell的大小应该是
 
         float *H = new float[hb*wb*n_chns];  //看需要多少存储空间来存这个
@@ -78,6 +78,8 @@ public:
             }
             res.push_back(desc.clone());
         }
+
+
 
         //clean
         delete [] I;

@@ -69,9 +69,13 @@ void KCF::Init(cv::Mat image, cv::Rect rect_init) {
 cv::Rect KCF::Update(cv::Mat image) {
   cv::Mat patch = GetSubwindow(image, pos_, window_sz_);    //子窗口
   std::vector<cv::Mat> z = GetFeatures(patch);     //获取窗口内特征，这里根据参数的不同获取的特征也不一样，分别是9维，36维和31维（还没有很懂）
-  std::vector<cv::Mat> zf_vector(z.size());      //这么多维特征
+  std::vector<cv::Mat> zf_vector(z.size());        //这么多维特征
+  cout << "特征维数：" << z.size() << "     " << "特征尺寸" << z[0].size() << endl;
+  double max;
+  cv::minMaxLoc(z[0], NULL, &max, NULL, NULL);
+  cout << " 最大值：" <<max<< endl;
   for (unsigned int i = 0; i < z.size(); ++i)
-    cv::dft(z[i], zf_vector[i], DFT_COMPLEX_OUTPUT);   //离散傅里叶变换
+    cv::dft(z[i], zf_vector[i], DFT_COMPLEX_OUTPUT);   //离散傅里叶变换，每个维的特征都做DFT
 
   cv::Mat kzf;
   if (strcmp(kernel_type_.c_str(), "gaussian") == 0)     //kernel_type_.c_str()这个成员函数是把string转换为字符数组
@@ -87,8 +91,9 @@ cv::Rect KCF::Update(cv::Mat image) {
   //这个就是快速检测的公式，所有的主要循环到这里就结束了，下面是显示的一些东西
 
   cv::Point maxLoc;
-  cv::minMaxLoc(response, NULL, NULL, NULL, &maxLoc);  //只返回最大值的位置就好了
-
+  
+  cv::minMaxLoc(response, NULL,NULL, NULL, &maxLoc);  //只返回最大值的位置就好了
+  
   if ((maxLoc.x + 1) > (response.cols / 2))
     maxLoc.x = maxLoc.x - response.cols;
   if ((maxLoc.y + 1) > (response.rows / 2))
@@ -111,12 +116,12 @@ cv::Rect KCF::Update(cv::Mat image) {
 
 void KCF::Learn(cv::Mat &patch, float lr) {
 
-  std::vector<cv::Mat> x = GetFeatures(patch);
+  std::vector<cv::Mat> x = GetFeatures(patch);  //特征
 
-  std::vector<cv::Mat> xf(x.size());
+  std::vector<cv::Mat> xf(x.size());         //
 
   for (unsigned int i = 0; i < x.size(); i++)
-    cv::dft(x[i], xf[i], DFT_COMPLEX_OUTPUT);
+    cv::dft(x[i], xf[i], DFT_COMPLEX_OUTPUT);   //对多维特征独自进行傅里叶变换
 
   cv::Mat kf;
   if (strcmp(kernel_type_.c_str(), "gaussian") == 0)
@@ -129,7 +134,7 @@ void KCF::Learn(cv::Mat &patch, float lr) {
   cv::Mat alphaf = ComplexDiv(yf_, kf + cv::Scalar(lambda_, 0));
 
   if (lr > 0.99) {
-    model_alphaf_ = alphaf;
+    model_alphaf_ = alphaf;   
     model_xf_.clear();
     for (unsigned int i = 0; i < xf.size(); ++i)
       model_xf_.push_back(xf[i]);
@@ -137,7 +142,7 @@ void KCF::Learn(cv::Mat &patch, float lr) {
     model_alphaf_ = (1.0 - lr) * model_alphaf_ + lr * alphaf;
     for (unsigned int i = 0; i < xf.size(); ++i)
       model_xf_[i] = (1.0 - lr) * model_xf_[i] + lr * xf[i];
-  }
+  }  //插值也是通道分开插值
 }
 
 cv::Mat KCF::CreateGaussian1D(int n, float sigma) {
@@ -244,10 +249,10 @@ std::vector<cv::Mat> KCF::GetFeatures(cv::Mat patch) {
       cv::cvtColor(patch, patch, CV_BGR2GRAY);    //灰度化
     patch.convertTo(patch, CV_32FC1, 1.0 / 255);  //归一化
 
-    x_vector = f_hog_.extract(patch);   //算f_hog，所以这个是重点，相比CSK来说
+    x_vector = f_hog_.extract(patch);   //这里算f_hog，所以这个是重点，如果是其他特征这里要给其他信息，相比CSK来说
 
     for (unsigned int i = 0; i < x_vector.size(); ++i)
-      x_vector[i] = x_vector[i].mul(cos_window_);    //点乘，opencv竟然自带了点乘，这个过程是加窗
+      x_vector[i] = x_vector[i].mul(cos_window_);    //点乘，opencv竟然自带了点乘，这个过程是加窗，是对每个都加窗！
   }
 
   if (features_gray_)   //这个是用灰度信息的话，就直接加窗就行了
@@ -270,7 +275,7 @@ cv::Mat KCF::GaussianCorrelation(std::vector<cv::Mat> xf, std::vector<cv::Mat> y
   std::vector<cv::Mat> xyf_vector(xf.size());
   cv::Mat xy(xf[0].size(), CV_32FC1, Scalar(0.0)), xyf, xy_temp;
   for (unsigned int i = 0; i < xf.size(); ++i) {
-    xx += cv::norm(xf[i]) * cv::norm(xf[i]) / N;   //这算出来竟然是这里算的是二范数，是一个double。
+    xx += cv::norm(xf[i]) * cv::norm(xf[i]) / N;     //这算出来竟然是这里算的是二范数，是一个double。
     yy += cv::norm(yf[i]) * cv::norm(yf[i]) / N;
     cv::mulSpectrums(xf[i], yf[i], xyf, 0, true);   //傅里叶域点乘
     cv::idft(xyf, xy_temp, cv::DFT_SCALE | cv::DFT_REAL_OUTPUT);   // Applying IDFT
@@ -326,7 +331,7 @@ cv::Mat KCF::ComplexMul(const cv::Mat &x1, const cv::Mat &x2) {
   cv::merge(complex, result);
   return result;
 }
-
+//这是个复数除法
 cv::Mat KCF::ComplexDiv(const cv::Mat &x1, const cv::Mat &x2) {
   std::vector<cv::Mat> planes1;
   cv::split(x1, planes1);

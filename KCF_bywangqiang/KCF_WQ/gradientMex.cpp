@@ -71,7 +71,7 @@ void gradMag( float *I, float *M, float *O, int h, int w, int d, bool full ) {
   M2=(float*) alMalloc(s,16); _M2=(__m128*) M2;
   Gx=(float*) alMalloc(s,16); _Gx=(__m128*) Gx;
   Gy=(float*) alMalloc(s,16); _Gy=(__m128*) Gy;
-  // compute gradient magnitude and orientation for each column
+  // compute gradient magnitude and orientation for each column //计算大小和方向
   for( x=0; x<w; x++ ) {
     // compute gradients (Gx, Gy) with maximum squared magnitude (M2)
     for(c=0; c<d; c++) {
@@ -218,7 +218,7 @@ void gradHist( float *M, float *O, float *H, int h, int w,
         if(hasRt) { _m=SET(0,0,ms[3],ms[2]);
           GH(H0+O0[y]+hb,_m,_m0); GH(H0+O1[y]+hb,_m,_m1); }
       }
-      // final rows, no bottom bin
+      // final rows, no bottom bin //最后的行
       for( ; y<h0; y++ ) {
         yb0 = (int) yb; GHinit;
         if(hasLf) { H0[O0[y]]+=ms[0]*M0[y]; H0[O1[y]]+=ms[0]*M1[y]; }
@@ -317,7 +317,7 @@ void fhog( float *M, float *O, float *H, int h, int w, int binSize,
     R2[o*nb+x] = R1[o*nb+x]+R1[(o+nOrients)*nb+x];
   // compute block normalization values
   N = hogNormMatrix( R2, nOrients, hb, wb, binSize );
-  // normalized histograms and texture channels
+  // normalized histograms and texture channels//归一化直方图和纹理通道
   hogChannels( H+nbo*0, R1, N, hb, wb, nOrients*2, clip, 1 );
   hogChannels( H+nbo*2, R2, N, hb, wb, nOrients*1, clip, 1 );
   hogChannels( H+nbo*3, R1, N, hb, wb, nOrients*2, clip, 2 );
