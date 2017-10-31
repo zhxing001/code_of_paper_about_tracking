@@ -71,9 +71,7 @@ cv::Rect KCF::Update(cv::Mat image) {
   std::vector<cv::Mat> z = GetFeatures(patch);     //获取窗口内特征，这里根据参数的不同获取的特征也不一样，分别是9维，36维和31维（还没有很懂）
   std::vector<cv::Mat> zf_vector(z.size());        //这么多维特征
   cout << "特征维数：" << z.size() << "     " << "特征尺寸" << z[0].size() << endl;
-  double max;
-  cv::minMaxLoc(z[0], NULL, &max, NULL, NULL);
-  cout << " 最大值：" <<max<< endl;
+  
   for (unsigned int i = 0; i < z.size(); ++i)
     cv::dft(z[i], zf_vector[i], DFT_COMPLEX_OUTPUT);   //离散傅里叶变换，每个维的特征都做DFT
 
@@ -249,8 +247,10 @@ std::vector<cv::Mat> KCF::GetFeatures(cv::Mat patch) {
       cv::cvtColor(patch, patch, CV_BGR2GRAY);    //灰度化
     patch.convertTo(patch, CV_32FC1, 1.0 / 255);  //归一化
 
-    x_vector = f_hog_.extract(patch);   //这里算f_hog，所以这个是重点，如果是其他特征这里要给其他信息，相比CSK来说
-
+    x_vector = f_hog_.extract(patch,1);   //这里算f_hog，所以这个是重点，如果是其他特征这里要给其他信息，相比CSK来说
+	double max;
+	cv::minMaxLoc(x_vector[0], NULL, &max, NULL, NULL);
+	cout << " 最大值：" << max << endl;  //我试了输出这个最大值，hog的截断是0.2没错
     for (unsigned int i = 0; i < x_vector.size(); ++i)
       x_vector[i] = x_vector[i].mul(cos_window_);    //点乘，opencv竟然自带了点乘，这个过程是加窗，是对每个都加窗！
   }

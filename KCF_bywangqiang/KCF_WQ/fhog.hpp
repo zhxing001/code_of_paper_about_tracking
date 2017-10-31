@@ -19,7 +19,7 @@ public:
     //description: extract hist. of gradients(use_hog == 0), hog(use_hog == 1) or fhog(use_hog == 2)
     //input: float one channel image as input, hog type    //输入是单通道的图像
     //return: computed descriptor
-    std::vector<cv::Mat> extract(const cv::Mat & img, int use_hog = 2, int bin_size = 4, int n_orients = 9, int soft_bin = -1, float clip = 0.2)
+    std::vector<cv::Mat> extract(const cv::Mat & img, int use_hog = 2, int bin_size = 4, int n_orients = 9, int soft_bin = -1, float clip = 0.2)  //这里这个clip是限幅的没错，0.2时特征的最大值是0.4，0.4时是0.8,在哪里有另外处理？
     {
         // d image dimension -> gray image d = 1
         // h, w -> height, width of image
@@ -56,7 +56,7 @@ public:
             gradHist( M, O, H, h, w, bin_size, n_orients, soft_bin, full );   //这个函数是算梯度统计中方图
         } else if (use_hog == 1) {
             full = false;   //by default
-            hog( M, O, H, h, w, bin_size, n_orients, soft_bin, full, clip );
+            hog( M, O, H, h, w, bin_size, n_orients, soft_bin, full, clip );  //clip是限幅用的？为什么我测试得到的最大值不是0.2
         } else {
             fhog( M, O, H, h, w, bin_size, n_orients, soft_bin, clip );
         }
@@ -71,7 +71,8 @@ public:
 
             //output cols-by-cols
             cv::Mat desc(hb, wb, CV_32F);
-            for (int x = 0; x < wb; ++x) {
+            for (int x = 0; x < wb; ++x) 
+			{
                 for (int y = 0; y < hb; ++y) {
                     desc.at<float>(y,x) = H[i*hb*wb + x*hb + y];
                 }

@@ -264,7 +264,7 @@ float* hogNormMatrix( float *H, int nOrients, int hb, int wb, int bin ) {
 void hogChannels( float *H, const float *R, const float *N,
   int hb, int wb, int nOrients, float clip, int type )
 {
-  #define GETT(blk) t=R1[y]*N1[y-(blk)]; if(t>clip) t=clip; c++;
+  #define GETT(blk) t=R1[y]*N1[y-(blk)]; if(t>clip) t=clip; c++;  //截断幅值，最大为clip
   const float r=.2357f; int o, x, y, c; float t;
   const int nb=wb*hb, nbo=nOrients*nb, hb1=hb+1;
   for( o=0; o<nOrients; o++ ) for( x=0; x<wb; x++ ) {
