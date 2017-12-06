@@ -1,3 +1,6 @@
+这个是作者的源代码，由于我做的是红外图像跟踪，用不到颜色特征，所以只是作为经典文章通读了一遍并且读了一遍代码，加了很多注释和自己的一点理解，作学习用吧。这个方法还是很好的。
+
+
 This MATLAB code is an implementation of the visual tracking method proposed in [1]. The implementation is built upon the code provided by [2]. The code provided by [3] is used for computing the color name representation.
 
 The project website is:
@@ -22,4 +25,4 @@ martin.danelljan@liu.se
 
 [3] J. van de Weijer, C. Schmid, J. J. Verbeek, and D. Larlus.
     "Learning color names for real-world applications."
-    TIP, 18(7):1512�1524, 2009.
+    TIP, 18(7):1512–1524, 2009.
