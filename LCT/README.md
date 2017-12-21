@@ -1,3 +1,7 @@
+# note
+嗯，代码我只是大概浏览了一遍主体，tracker_lct.m这个文件，测试了一下效果不太好就没有深究细节，只是看了下大概思路，程序运行也需要改一些东西，一并总结了，放在这里：http://www.jianshu.com/p/9c4e51ed42e0
+
+
 # Long-Term Correlation Tracking (CVPR 2015)
 
 Chao Ma, Xiakang Yang, Chongyang Zhang, and Ming-Hsuan Yang
