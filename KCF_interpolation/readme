@@ -1,0 +1,6 @@
+还是王强大神的代码，原址：https://github.com/foolwood/KCF  环境是VS2015+opencv3.4
+主要的修改：
+1. 读取视频接口，及鼠标选取初始跟踪框的的接口。
+2. 模板匹配跟踪的函数，自己做实验和其进行相比，在TemplateTracking.h文件里有其定义。
+3. Fhog特征加三角插值的快速检测，在KCF类中的成员函数update()中修改，而原始KCF的update()函数改为update1()
+4. 截取视频帧的函数，在cut_video的项目中，但是实测opencv的写视频不如matlab的好用，需要截取视频还是用matlab比较方便。
