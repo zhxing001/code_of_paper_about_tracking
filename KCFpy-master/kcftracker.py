@@ -156,7 +156,7 @@ class KCFTracker:
 	def gaussianCorrelation(self, x1, x2):
 		if(self._hogfeatures):
 			c = np.zeros((self.size_patch[0], self.size_patch[1]), np.float32)
-			for i in xrange(self.size_patch[2]):
+			for i in range(self.size_patch[2]):
 				x1aux = x1[i, :].reshape((self.size_patch[0], self.size_patch[1]))
 				x2aux = x2[i, :].reshape((self.size_patch[0], self.size_patch[1]))
 				caux = cv2.mulSpectrums(fftd(x1aux), fftd(x2aux), 0, conjB = True)
