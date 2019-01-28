@@ -135,19 +135,22 @@ int main()
 	{
 
 		cout << "this is the VOT tracking test!!" << endl;
-		cout << "and this is " << list[i] << endl;
+		cout << "and this is " << list[i] << endl<<endl;
 
 		//保存跟踪结果
-		ofstream res_ground("results//" + list[i] + "_res_ground.txt");
-		ofstream res_kcf("results//" + list[i] + "_res_kcf.txt");
-		ofstream res_kcf_inter("results//" + list[i] + "_res_kcf_interpolation.txt");
-		ofstream ave_fps("results//" + list[i] + "_avefps.txt");
+		ofstream res_ground("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//results//" + list[i] + "_res_ground.txt");
+		ofstream res_kcf("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//results//" + list[i] + "_res_kcf.txt");
+		ofstream res_kcf_inter("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//results//" + list[i] + "_res_kcf_interpolation.txt");
+		ofstream ave_fps_kcf("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//results//" + list[i] + "_ave_fps_kcf.txt");
+		ofstream ave_fps_kcf_inter("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//results//" + list[i] + "_ave_fps_kcf_inter.txt");
+
 
 		//表头信息
 		res_ground<< "frame\tx\ty\twidth\theight\n";
 		res_kcf << "frame\tx\ty\twidth\theight\n";
 		res_kcf_inter << "frame\tx\ty\twidth\theight\n";
-		ave_fps<< "frame\tave_fps\n";
+		ave_fps_kcf<< "frame\tave_fps\n";
+		ave_fps_kcf_inter << "frame\tave_fps\n";
 
 		string path = "C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//vot2015//" + list[i] + "//";
 		
@@ -159,13 +162,15 @@ int main()
 
 		// ground_truth信息存起来
 		int index = 1;
-		for (auto gg : groundtruth)
+		for (auto &gg : groundtruth)
 		{
 			setROI_4(gg);
 			res_ground << index++ << "\t" << gg.x << "\t" << gg.y << "\t" << gg.width << "\t" << gg.height << "\n";
 		}
 		res_ground.close();      //关闭txt文件
 
+		res_kcf << 1 << "\t" << groundtruth[0].x << "\t" << groundtruth[0].y << "\t" << groundtruth[0].width << "\t" << groundtruth[0].height << "\n";
+		res_kcf_inter << 1 << "\t" << groundtruth[0].x << "\t" << groundtruth[0].y << "\t" << groundtruth[0].width << "\t" << groundtruth[0].height << "\n";
 
 	    //跟踪结果保存的vector
 		vector<cv::Rect> track_res;
@@ -194,25 +199,43 @@ int main()
 		kcf_tracker_i.Init(img, groundtruth[0]);
 		kcf_tracker.Init(img, groundtruth[0]);
 
-		double start, end;
+		double start=0;
+		double all_time_kcf = 0;
+		double all_time_kcf_inter=0;
 		Rect Rect_kcf_i, Rect_kcf;
 		
 		for (int j = 2; j < num_of_line; j++)
 		{
-			cout << "frame\t" << j << endl;
+			//cout << "frame\t" << j << endl;
 			string img_name = zeros8 + std::to_string(j);
 			string img_path = path + string(img_name.end() - 8, img_name.end()) + ".jpg";
 			cv::Mat frame = imread(img_path);      //读取当前的照片
 			start= static_cast<double>(getTickCount());
 			Rect_kcf = kcf_tracker.Update1(frame);
+			all_time_kcf += ((double)getTickCount() - start) / getTickFrequency();
+			
+			start = static_cast<double>(getTickCount());
 			Rect_kcf_i = kcf_tracker_i.Update(frame); 
+			all_time_kcf_inter += ((double)getTickCount() - start) / getTickFrequency();
+			
+
+			//蓝色groundtruth，红色KCF，绿色KCF_i
+			rectangle(frame, groundtruth[j - 1], Scalar(255, 0, 0));
 			rectangle(frame, Rect_kcf, Scalar(0, 0, 255));
 			rectangle(frame, Rect_kcf_i, Scalar(0, 255, 0));
 
-			imshow("test", frame);
-			waitKey(10);
-		}
+			//存储位置信息
+			res_kcf << j << "\t" << Rect_kcf.x << "\t" << Rect_kcf.y << "\t" << Rect_kcf.width << "\t" << Rect_kcf.height << "\n";
+			res_kcf_inter << j << "\t" << Rect_kcf_i.x << "\t" << Rect_kcf_i.y << "\t" << Rect_kcf_i.width << "\t" << Rect_kcf_i.height << "\n";
 
+			//存储平均fps
+			ave_fps_kcf << j << "\t" << (j - 1) / all_time_kcf << "\n";
+			ave_fps_kcf_inter << j << "\t" << (j - 1) / all_time_kcf_inter << "\n";
+
+
+			imshow("test", frame);
+			waitKey(5);
+		}
 		destroyAllWindows();
 
 	
