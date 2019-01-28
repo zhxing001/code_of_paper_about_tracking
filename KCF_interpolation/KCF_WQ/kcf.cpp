@@ -87,15 +87,21 @@ cv::Rect KCF::Update(cv::Mat image) {
   cv::Mat responseFFT;        //响应图
   responseFFT = ComplexMul(model_alphaf_, kzf);
  
+  //插值要保证是偶数比较容易，所以这里保证是偶数，并且除以2用来插值
+  cv::Size sz = responseFFT.size();
+  int width = sz.width/2;
+  int height = sz.height/2;
 
-
-  cv::Mat responseSZ = cv::Mat::zeros(Size(80, 120), responseFFT.type());
+  
+  
+  //这里是4倍的插值，4*4的区域有12个部分都是插值来的
+  cv::Mat responseSZ = cv::Mat::zeros(Size(4*width, 4*height), responseFFT.type());
 
   cv::Mat res;
-  responseFFT(Rect(0, 0, 10, 15)).copyTo(responseSZ(Rect(0, 0, 10, 15)));
-  responseFFT(Rect(10, 0, 10, 15)).copyTo(responseSZ(Rect(70, 0, 10, 15)));
-  responseFFT(Rect(0, 15, 10, 15)).copyTo(responseSZ(Rect(0, 105, 10, 15)));
-  responseFFT(Rect(10, 15, 10, 15)).copyTo(responseSZ(Rect(70, 105, 10, 15)));
+  responseFFT(Rect(0, 0, width, height)).copyTo(responseSZ(Rect(0, 0, width, height)));
+  responseFFT(Rect(width, 0, width, height)).copyTo(responseSZ(Rect(3*width, 0, width, height)));
+  responseFFT(Rect(0, height, width, height)).copyTo(responseSZ(Rect(0, height*3, width, height)));
+  responseFFT(Rect(width, height, width, height)).copyTo(responseSZ(Rect(3 * width, height * 3, width, height)));
   /*vector<Mat> responseFFTRI;
   split(responseSZ, responseFFTRI);*/
   //cout <<"实部"<< responseFFTRI[0] << endl;

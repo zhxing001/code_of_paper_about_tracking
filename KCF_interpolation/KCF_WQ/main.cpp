@@ -113,6 +113,17 @@ vector<string> read_list(const string &list_name)
 }
 
 
+void setROI_4(cv::Rect &rect)
+{
+	if (rect.width % 4 == 1)   rect.width -= 1;
+	else if (rect.width % 4 == 2) { rect.x -= 1; rect.width += 2; }
+	else if (rect.width % 4 == 3)   rect.width += 1;
+
+	if (rect.height % 4 == 1)   rect.height -= 1;
+	else if (rect.height % 4 == 2) { rect.y -= 1; rect.height += 2; }
+	else if (rect.height % 4 == 3)   rect.height += 1;
+}
+
 
 
 
@@ -122,6 +133,7 @@ int main()
 	vector<string> list = read_list("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//vot2015//list.txt");
 	for (int i = 0; i < list.size(); i++)
 	{
+
 		cout << "this is the VOT tracking test!!" << endl;
 		cout << "and this is " << list[i] << endl;
 
@@ -139,28 +151,34 @@ int main()
 
 		string path = "C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//vot2015//" + list[i] + "//";
 		
-		cout << path << endl;
-
 		int num_of_line = 0;
 
 		//读取groundtruth信息
 		vector<cv::Rect> groundtruth = read_groundtruth(path + "groundtruth.txt", num_of_line);
 
+
 		// ground_truth信息存起来
 		int index = 1;
 		for (auto gg : groundtruth)
 		{
+			setROI_4(gg);
 			res_ground << index++ << "\t" << gg.x << "\t" << gg.y << "\t" << gg.width << "\t" << gg.height << "\n";
 		}
 		res_ground.close();      //关闭txt文件
 
+
 	    //跟踪结果保存的vector
 		vector<cv::Rect> track_res;
+		setROI_4(groundtruth[0]);
+		cout <<"groundtruth[0]\t" <<groundtruth[0] << endl;
+
 		track_res.push_back(groundtruth[0]);
 
 		//读取第一张图片信息
 		string zeros8 = "00000000";
 		cv::Mat img = imread(path + "00000001.jpg");
+		cout << "the first one image_size\t" << img.size() << endl;
+		cout << "the first roi size is\t" << groundtruth[0] << endl;
 		imshow("img", img);
 		double all_time = 0;
 
@@ -181,15 +199,21 @@ int main()
 		
 		for (int j = 2; j < num_of_line; j++)
 		{
+			cout << "frame\t" << j << endl;
 			string img_name = zeros8 + std::to_string(j);
 			string img_path = path + string(img_name.end() - 8, img_name.end()) + ".jpg";
 			cv::Mat frame = imread(img_path);      //读取当前的照片
 			start= static_cast<double>(getTickCount());
 			Rect_kcf = kcf_tracker.Update1(frame);
-			Rect_kcf_i = kcf_tracker_i.Update(frame);
-			
+			Rect_kcf_i = kcf_tracker_i.Update(frame); 
+			rectangle(frame, Rect_kcf, Scalar(0, 0, 255));
+			rectangle(frame, Rect_kcf_i, Scalar(0, 255, 0));
 
+			imshow("test", frame);
+			waitKey(10);
 		}
+
+		destroyAllWindows();
 
 	
 		
@@ -202,107 +226,107 @@ int main()
 
 	}
 
-	
-	
+	//
+	//
 
 
-	//测试用
-	//for (unsigned i = 0; i < video_num;i++)
+	////测试用
+	////for (unsigned i = 0; i < video_num;i++)
+	////{
+	//   // video.read(frame);
+	//   // imshow("视频", frame);
+	//   // waitKey(10);
+	////}
+	//ofstream pos("pos_kcf2.txt");       //存结果
+	//ofstream pos_tt("pos_tempTrack.txt");
+	////表头
+	////pos << "x" << "\t" << "y" << "\t" << "width"
+	////	<< "\t" << "height" << "\t" << "center.x" << "\t " << "center.y" << "\n";
+	//Rect TemTrackingRes;
+	//Mat model;
+	//Rect TrackBox = groundtruth_rect[0];
+
+	//for (unsigned frame = 0; frame < video_num; ++frame)   //遍历图片序列
 	//{
-	   // video.read(frame);
-	   // imshow("视频", frame);
-	   // waitKey(10);
+
+
+	//	video.read(image);
+	//	/*Mat img_cut;
+	//	img_cut = image(Range(215, 380),Range(175, 460));
+	//	imwrite(".\\截图\\" + to_string(frame) + ".jpg", img_cut);*/
+	//	//image = cv::imread(image_files[frame]);
+	//	//imwrite("test.jpg", image);
+	//	tic = getTickCount();
+	//	
+	//		if (frame == 0)
+	//		{    //第一帧直接初始化并把
+	//			cv::String frame1 = "frame1";
+	//			imshow(frame1, image);
+	//			
+	//			Mat img_gray;
+	//			cvtColor(image, img_gray, CV_RGB2GRAY);
+	//			
+	//			
+	//			//model = img_gray(TrackBox);       //获取模板
+	//			//imshow("model", model);
+	//		
+
+	//			//groundtruth_rect[0] = get_rec_pos(image);
+	//			//groundtruth_rect[0] = GetRoi(frame1, image);
+
+	//			//这是我新加的一个函数，选择结束时按ESC,会返回一个REC的对象可以初始化跟踪器的初始位置
+	//			//按理说封装成一个类比较好，但是没有封装成功，主要原因是鼠标回掉函数不能作为类成员函数，声名
+	//			//成友元也不能访问成员（按理说是可以访问的），着急这测试效果，（在这个项目中不封装也不是很影响）
+	//			//所以就先写成头文件了。
+	//			cout << "跟踪框大小" << groundtruth_rect[0] << endl;
+	//			kcf_tracker.Init(image, groundtruth_rect[0]);
+	//			kcf_trackerG.Init(image, groundtruth_rect[0]);
+	//			result_rect.push_back(groundtruth_rect[0]);     //0-index
+	//			result_rectG.push_back(groundtruth_rect[0]);
+	//		}
+	//		//result_rect存的是程序跟踪到的位置
+	//		else
+	//		{
+	//			//tracking(image, model, TrackBox);
+	//			//imshow("model", model);
+	//			result_rect.push_back(kcf_tracker.Update(image));
+	//			result_rectG.push_back(kcf_trackerG.Update1(image));
+	//		}
+	//		
+	//		if (show_visualization) {
+	//			cv::putText(image, to_string(frame + 1), cv::Point(20, 40), 6, 1,
+	//				cv::Scalar(0, 255, 255), 2);
+	//			//cv::rectangle(image, groundtruth_rect[frame], cv::Scalar(0, 255, 0), 2);
+	//			cv::rectangle(image, TrackBox, cv::Scalar(0, 255, 0), 1);
+	//			//cv::circle(image, Point(TrackBox.x + 0.5*TrackBox.width, TrackBox.y + 0.5*TrackBox.height), 1, Scalar(0, 255, 0));
+	//			cv::rectangle(image, result_rect[frame], cv::Scalar(0, 0, 255), 1);
+	//			cv::rectangle(image, result_rectG[frame], cv::Scalar(0, 255,255), 1);
+	//			//cv::circle(image, kcf_tracker.getPos(), 3, Scalar(0, 0, 255), -1);  //把目标的中心点画出来
+	//			cv::imshow("tracking", image);
+
+	//			//imwrite(to_string(frame) + ".jpg", image);
+	//			//结果存入txt
+	//			//Rect Pos_kcf = kcf_tracker.getRec();
+	//			//pos << Pos_kcf.x +0.5*Pos_kcf.width<< "\t" << Pos_kcf.y+0.5*Pos_kcf.height << "\n";
+	//			pos_tt << TrackBox.x + 0.5*TrackBox.width << "\t" << TrackBox.y + 0.5*TrackBox.height << "\n";
+	//			//	<< Pos.height << "\t" << Pos.x + Pos.width / 2 << "\t" << Pos.y + Pos.height / 2 << "\n";
+	//			
+	//			cv::imwrite(".\\image1\\" + std::to_string(frame) + ".jpg", image);
+	//			char key = cv::waitKey(1);
+	//			if (key == 27 || key == 'q' || key == 'Q')
+	//				break;
+	//			
+
+	//	}
 	//}
-	ofstream pos("pos_kcf2.txt");       //存结果
-	ofstream pos_tt("pos_tempTrack.txt");
-	//表头
-	//pos << "x" << "\t" << "y" << "\t" << "width"
-	//	<< "\t" << "height" << "\t" << "center.x" << "\t " << "center.y" << "\n";
-	Rect TemTrackingRes;
-	Mat model;
-	Rect TrackBox = groundtruth_rect[0];
-
-	for (unsigned frame = 0; frame < video_num; ++frame)   //遍历图片序列
-	{
-
-
-		video.read(image);
-		/*Mat img_cut;
-		img_cut = image(Range(215, 380),Range(175, 460));
-		imwrite(".\\截图\\" + to_string(frame) + ".jpg", img_cut);*/
-		//image = cv::imread(image_files[frame]);
-		//imwrite("test.jpg", image);
-		tic = getTickCount();
-		
-			if (frame == 0)
-			{    //第一帧直接初始化并把
-				cv::String frame1 = "frame1";
-				imshow(frame1, image);
-				
-				Mat img_gray;
-				cvtColor(image, img_gray, CV_RGB2GRAY);
-				
-				
-				//model = img_gray(TrackBox);       //获取模板
-				//imshow("model", model);
-			
-
-				//groundtruth_rect[0] = get_rec_pos(image);
-				//groundtruth_rect[0] = GetRoi(frame1, image);
-
-				//这是我新加的一个函数，选择结束时按ESC,会返回一个REC的对象可以初始化跟踪器的初始位置
-				//按理说封装成一个类比较好，但是没有封装成功，主要原因是鼠标回掉函数不能作为类成员函数，声名
-				//成友元也不能访问成员（按理说是可以访问的），着急这测试效果，（在这个项目中不封装也不是很影响）
-				//所以就先写成头文件了。
-				cout << "跟踪框大小" << groundtruth_rect[0] << endl;
-				kcf_tracker.Init(image, groundtruth_rect[0]);
-				kcf_trackerG.Init(image, groundtruth_rect[0]);
-				result_rect.push_back(groundtruth_rect[0]);     //0-index
-				result_rectG.push_back(groundtruth_rect[0]);
-			}
-			//result_rect存的是程序跟踪到的位置
-			else
-			{
-				//tracking(image, model, TrackBox);
-				//imshow("model", model);
-				result_rect.push_back(kcf_tracker.Update(image));
-				result_rectG.push_back(kcf_trackerG.Update1(image));
-			}
-			
-			if (show_visualization) {
-				cv::putText(image, to_string(frame + 1), cv::Point(20, 40), 6, 1,
-					cv::Scalar(0, 255, 255), 2);
-				//cv::rectangle(image, groundtruth_rect[frame], cv::Scalar(0, 255, 0), 2);
-				cv::rectangle(image, TrackBox, cv::Scalar(0, 255, 0), 1);
-				//cv::circle(image, Point(TrackBox.x + 0.5*TrackBox.width, TrackBox.y + 0.5*TrackBox.height), 1, Scalar(0, 255, 0));
-				cv::rectangle(image, result_rect[frame], cv::Scalar(0, 0, 255), 1);
-				cv::rectangle(image, result_rectG[frame], cv::Scalar(0, 255,255), 1);
-				//cv::circle(image, kcf_tracker.getPos(), 3, Scalar(0, 0, 255), -1);  //把目标的中心点画出来
-				cv::imshow("tracking", image);
-
-				//imwrite(to_string(frame) + ".jpg", image);
-				//结果存入txt
-				//Rect Pos_kcf = kcf_tracker.getRec();
-				//pos << Pos_kcf.x +0.5*Pos_kcf.width<< "\t" << Pos_kcf.y+0.5*Pos_kcf.height << "\n";
-				pos_tt << TrackBox.x + 0.5*TrackBox.width << "\t" << TrackBox.y + 0.5*TrackBox.height << "\n";
-				//	<< Pos.height << "\t" << Pos.x + Pos.width / 2 << "\t" << Pos.y + Pos.height / 2 << "\n";
-				
-				cv::imwrite(".\\image1\\" + std::to_string(frame) + ".jpg", image);
-				char key = cv::waitKey(1);
-				if (key == 27 || key == 'q' || key == 'Q')
-					break;
-				
-
-		}
-	}
-		time = time / double(getTickFrequency());
-		double fps = double(result_rect.size()) / time;
-		cout << "帧率: ----------" << fps << endl;
-		/*std::vector<double> precisions = PrecisionCalculate(groundtruth_rect,
-															result_rect);
-		std::cout<<"%12s - Precision (20px) : %1.3f, FPS : %4.2f\n"<<
-			   video_base_path.c_str()<<" "<<precisions[20]<<"  "<< fps<<endl;*/
-		cv::destroyAllWindows();
+	//	time = time / double(getTickFrequency());
+	//	double fps = double(result_rect.size()) / time;
+	//	cout << "帧率: ----------" << fps << endl;
+	//	/*std::vector<double> precisions = PrecisionCalculate(groundtruth_rect,
+	//														result_rect);
+	//	std::cout<<"%12s - Precision (20px) : %1.3f, FPS : %4.2f\n"<<
+	//		   video_base_path.c_str()<<" "<<precisions[20]<<"  "<< fps<<endl;*/
+	//	cv::destroyAllWindows();
 
 	
 		
