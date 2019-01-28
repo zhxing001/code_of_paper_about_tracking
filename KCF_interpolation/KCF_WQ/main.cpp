@@ -23,103 +23,187 @@ using namespace std;
 std::vector<cv::Rect>   GetGroundtruth(std::string txt_file);
 std::vector<double>   PrecisionCalculate(std::vector<cv::Rect> groundtruth_rect, 
 				      std::vector<cv::Rect> result_rect);
+
+
+
+cv::Rect split_line(string &line);   //分离字符串函数声明
+									 //读取groundtruth信息
+
+
+
+vector<cv::Rect> read_groundtruth(const string &groundtruth_txt, int &num_of_line)    //const常量才可以由字符串隐式转换
+{
+	vector<cv::Rect> groundtruth;            // vector<rect>  用来存groundtruth
+	ifstream groundtruth_file;               // 文件对象
+	groundtruth_file.open(groundtruth_txt);      //打开txt文件
+	string line;         //当前行
+	Rect rect_tmp;       //每一行搞成一个rect
+	while (getline(groundtruth_file, line))
+	{
+		rect_tmp = split_line(line);    //分解字符串为RECT
+		groundtruth.push_back(rect_tmp);    //压入vector
+		num_of_line++;
+	}
+	groundtruth_file.close();
+	return groundtruth;
+}
+
+cv::Rect split_line(string &line)
+{
+	double pos[8];            //八个点
+	int index = 0;              //点的索引
+	string tmp;               //暂存的string，来转换为double
+	tmp.clear();              //清零
+	for (auto l : line)          //遍历字符串，这里面是一个比较简单的字符串根据特定字符分离的一个算法
+	{
+		if (l == ',')
+		{
+			pos[index] = stod(tmp);
+			index++;
+			tmp.clear();     //一定要记得清零
+		}
+		else
+		{
+			tmp += l;
+		}
+	}
+	pos[index] = stod(tmp);    //处理最后一个
+							   //四个点，对应矩形的四个点
+
+							   /* 我后来发现标注的点并不是遵循这样的规律，不一定一开始是左上角的点，这取决于当时标注的
+							   人先从哪个点开始点的，所以应该来使用坐标之间的大小关系来确定到底是哪个点
+							   cv::Point2f up_left(pos[0],pos[1]);
+							   cv::Point2f up_right(pos[2],pos[3]);
+							   cv::Point2f down_right(pos[4],pos[5]);
+							   cv::Point2f down_left(pos[6],pos[7]);
+							   //cout<<up_left<<" "<<up_right<<" "<<down_right<<" "<<down_left<<endl;
+
+
+							   int x=round(up_left.x);
+							   int y=round(up_left.y);
+							   int weidth=round(down_right.x-up_left.x);
+							   int height=round(down_right.y-up_left.y);
+							   cv::Rect res(x,y,weidth,height);
+							   */
+
+	double xmin = min(pos[0], min(min(pos[2], pos[4]), pos[6]));
+	double ymin = min(pos[1], min(min(pos[3], pos[5]), pos[7]));
+	double xmax = max(pos[0], max(max(pos[2], pos[4]), pos[6]));
+	double ymax = max(pos[1], max(max(pos[3], pos[5]), pos[7]));
+
+	cv::Rect res(xmin, ymin, xmax - xmin, ymax - ymin);
+	//cout<<res<<endl;
+
+	return res;
+}
+
+// 读取list列表的信息
+vector<string> read_list(const string &list_name)
+{
+	vector<string> list_mes;
+	ifstream list(list_name);
+	string line;
+	while (getline(list, line))   //读取list列表信息
+	{
+		//cout<<line<<endl;
+		list_mes.push_back(line);
+	}
+	list.close();
+	return list_mes;
+}
+
+
+
+
+
 int main()
 {
+	printf("this is a kcf test code!!!\n");
+	vector<string> list = read_list("C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//vot2015//list.txt");
+	for (int i = 0; i < list.size(); i++)
+	{
+		cout << "this is the VOT tracking test!!" << endl;
+		cout << "and this is " << list[i] << endl;
+
+		//保存跟踪结果
+		ofstream res_ground("results//" + list[i] + "_res_ground.txt");
+		ofstream res_kcf("results//" + list[i] + "_res_kcf.txt");
+		ofstream res_kcf_inter("results//" + list[i] + "_res_kcf_interpolation.txt");
+		ofstream ave_fps("results//" + list[i] + "_avefps.txt");
+
+		//表头信息
+		res_ground<< "frame\tx\ty\twidth\theight\n";
+		res_kcf << "frame\tx\ty\twidth\theight\n";
+		res_kcf_inter << "frame\tx\ty\twidth\theight\n";
+		ave_fps<< "frame\tave_fps\n";
+
+		string path = "C:\\Users\\zhxing\\Desktop\\code_of_paper_about_tracking//vot2015//" + list[i] + "//";
+		
+		cout << path << endl;
+
+		int num_of_line = 0;
+
+		//读取groundtruth信息
+		vector<cv::Rect> groundtruth = read_groundtruth(path + "groundtruth.txt", num_of_line);
+
+		// ground_truth信息存起来
+		int index = 1;
+		for (auto gg : groundtruth)
+		{
+			res_ground << index++ << "\t" << gg.x << "\t" << gg.y << "\t" << gg.width << "\t" << gg.height << "\n";
+		}
+		res_ground.close();      //关闭txt文件
+
+	    //跟踪结果保存的vector
+		vector<cv::Rect> track_res;
+		track_res.push_back(groundtruth[0]);
+
+		//读取第一张图片信息
+		string zeros8 = "00000000";
+		cv::Mat img = imread(path + "00000001.jpg");
+		imshow("img", img);
+		double all_time = 0;
 
 
-	//这个是我自己测试用的
-	//Mat patch = imread("zx.jpg");
-	//imshow("test ", patch);
-	//FHoG fhog;
-	//std::vector<Mat> x_vector;
-	//cv::cvtColor(patch, patch, CV_BGR2GRAY);    //灰度化
-	//patch.convertTo(patch, CV_32FC1, 1.0 / 255);  //归一化
+		std::string kernel_type = "gaussian";  //gaussian polynomial linear  用什么核,可选多项式和高斯，如果是其他的就不用核函数
+		std::string feature_type = "hog";      //hog gray fhog             用什么特征,这里hog默认用的是fhog
 
-	//x_vector = fhog.extract(patch,1);   //算
-	//cout << "原图大小" <<patch.size()<< endl;
-	//cout <<"特征维数"<< x_vector.size() << endl;
-	//string x = "hog";
-	//int i = 1;
-	////cout << x_vector[0] << endl;
-	//for (auto m : x_vector)
-	//{
-	//	
-	//	cout << m.size() << endl;
-	//	namedWindow(x + std::to_string(i),2);
-	//	cout << x + std::to_string(i);
-	//	imshow(x+std::to_string(i), m);
-	//	i++;
-	//}
-	//
-	//	
-	//waitKey(0);
-	//return 0;
-	//以上是我测试用的
+		// 高斯核，hog特征，i是插值的，不带i是不插值的。
+		KCF kcf_tracker_i(kernel_type, feature_type);    //这是写好的一个类。
+		KCF kcf_tracker(kernel_type, feature_type);    //这是写好的一个类。
 
 
-  //if (argc != 3) 
-  //{
-  //  std::cout << "Usage:" 
-  //            << argv[0] << " video_base_path[./girl] Verbose[0/1]" << std::endl;
-  //  return 0;
-  //}
- /* cout << argv[1] << endl;*/
+		kcf_tracker_i.Init(img, groundtruth[0]);
+		kcf_tracker.Init(img, groundtruth[0]);
+
+		double start, end;
+		Rect Rect_kcf_i, Rect_kcf;
+		
+		for (int j = 2; j < num_of_line; j++)
+		{
+			string img_name = zeros8 + std::to_string(j);
+			string img_path = path + string(img_name.end() - 8, img_name.end()) + ".jpg";
+			cv::Mat frame = imread(img_path);      //读取当前的照片
+			start= static_cast<double>(getTickCount());
+			Rect_kcf = kcf_tracker.Update1(frame);
+			Rect_kcf_i = kcf_tracker_i.Update(frame);
+			
+
+		}
+
+	
+		
 
 
-  //读图片的话用这个
-  //std::string video_base_path;
-  //video_base_path ="C:/Users/zhxing/Desktop/论文代码/KCF_WQ/KCF_WQ/david";
-  //std::string pattern_jpg = video_base_path+ "/image/*.jpg";
-  //cout << pattern_jpg << endl;
-  //std::string pattern_png = video_base_path+ "/image/*.png";
-  //std::vector<cv::String> image_files;
-  //cv::glob(pattern_jpg, image_files);
-
-   //测试用
-
-   //以上，测试用
-
- /* if (image_files.size() == 0)
-	cv::glob(pattern_png, image_files);
-  if (image_files.size() == 0)
-  {
-	std::cout << "No image files[jpg png]" << std::endl;
-	return 0;
-  }*/
-  //std::string txt_base_path = video_base_path + "/groundtruth.txt";
 
 
-  std::vector<cv::Rect> groundtruth_rect(2700,Rect());
- // groundtruth_rect = GetGroundtruth(txt_base_path);
 
-//  for (auto i : groundtruth_rect)
-//	  cout << i << endl;
-//这里读取的gt信息根本就不对，我也不要这个了，我自己给吧
 
-	groundtruth_rect[0] = Rect(394, 266, 40, 60);
-	cv::Mat image;
-	std::vector<cv::Rect> result_rect;
-	std::vector<cv::Rect> result_rectG;
-	int64 tic, toc;      //计算时间用的
-	double time = 0;
-	double time_cnt = 0;
-	bool show_visualization = true;
 
-	std::string kernel_type = "gaussian";  //gaussian polynomial linear  用什么核,可选多项式和高斯，如果是其他的就不用核函数
-	std::string feature_type = "hog";      //hog gray fhog             用什么特征,这里hog默认用的是fhog
+	}
+
 	
 	
-	KCF kcf_trackerG(kernel_type, feature_type);    //这是写好的一个类。
-	KCF kcf_tracker(kernel_type, feature_type);    //这是写好的一个类。
-	kcf_tracker.maxLoctxt = ofstream("PosLoc.txt");
-	cout << "test1" << endl;
-
-	//读视频的话用这个可以。
-	VideoCapture video("data_cut.avi");
-	VideoCapture video1("dat1.avi");
-	Mat frame;
-	unsigned video_num = video1.get(CV_CAP_PROP_FRAME_COUNT);
-	cout << "总帧数: " << video_num << endl;
 
 
 	//测试用
@@ -159,7 +243,7 @@ int main()
 				cvtColor(image, img_gray, CV_RGB2GRAY);
 				
 				
-				model = img_gray(TrackBox);       //获取模板
+				//model = img_gray(TrackBox);       //获取模板
 				//imshow("model", model);
 			
 
@@ -179,7 +263,7 @@ int main()
 			//result_rect存的是程序跟踪到的位置
 			else
 			{
-				tracking(image, model, TrackBox);
+				//tracking(image, model, TrackBox);
 				//imshow("model", model);
 				result_rect.push_back(kcf_tracker.Update(image));
 				result_rectG.push_back(kcf_trackerG.Update1(image));
